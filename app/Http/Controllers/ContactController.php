@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Contact\StoreRequest;
 use App\Models\Contact;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class ContactController extends Controller
@@ -14,7 +15,10 @@ class ContactController extends Controller
      */
     public function index()
     {
-        return Inertia::render('Contact/Index');
+        $contacts = Contact::all();
+        return Inertia::render('Contact/Index', [
+            'contacts' => $contacts
+        ]);
     }
 
     /**
@@ -30,7 +34,15 @@ class ContactController extends Controller
      */
     public function store(StoreRequest $request)
     {
-        dd($request->all());
+        $data = $request->except('avatar');
+        if ($request->hasFile('avatar')) {
+            $file = $request->file('avatar');
+            $routeName = $file->store('avatars', ['disk' => 'public']); //almacena imágenes
+            $data['avatar'] = $routeName;
+        }
+        $data['user_id'] = Auth::user()->id;
+        Contact::create($data);
+        return redirect()->route('contacts.create')->with('success', 'Usuario creado exitosamente');
     }
 
     /**
